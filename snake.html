@@ -1,0 +1,355 @@
+<!-- Created by Alquen-->
+
+<!DOCTYPE html>
+<html>
+  <head>
+   <title>Snake Game</title>
+   <style>
+    canvas{
+      margin: auto;
+      display: block;
+      box-shadow: #ddd 0 0 3px 2px;
+      background-color: #eee
+    }
+    body{
+      text-align: center;
+    }
+    h2{
+      font-family: 'Rock Salt', cursive;
+      font-size: 1em;
+    }
+    button{
+      border-radius: 50%;
+      color: white;
+      border: 0;
+      background-color: cornflowerblue;
+      margin-left: 10px;
+    }
+   </style>
+   <link href="src/css2.css" rel="stylesheet">
+   <link rel="stylesheet" href="src/css1.css">
+	<script src="src/js1.js"></script>
+  </head>
+  <body>
+    <h2>Walled Snake - Snake 3 <button id="button">ℹ️</button></h2>
+    <canvas id="canvas" width="300" height="300"></canvas>
+    <script>
+      var info = "Eat 20 foods to win. Walls move vertically after eating, so think where to move next. Swipe on phone or press arrow keys on keyboard.\n\nThis is the Walled Snake game, the 3rd version of modified snake compilation made by Alquen. Visit the other version in his profile."
+      var canvas = document.getElementById("canvas");
+      var ctx = canvas.getContext("2d");
+      var food = {
+        x: 0,
+        y: 0,
+        live: false
+      }
+      var score = 0;
+
+
+      //Food create and draw functions
+      //A random creator function
+      function random(min, max, interval){
+        if(min === max || max - min < interval){
+          return false;
+        }
+        return Math.round(Math.random() * ((max - min) / interval)) * (interval) + min;
+      }
+
+        //Check if food is draw in the snakes body
+      function checkFood(){
+        for(part of player.snake){
+          if(part.x == food.x && part.y == food.y){
+            return false;
+          }
+        }
+        return true;
+      }
+
+      //Creates food
+      function createFood(){
+        if(!food.live){
+          food.x = random(0, 300 - 10, 10);
+          food.y = random(0, 300 - 10, 10);
+          while(!checkFood()){
+            food.x = random(0, 300 - 10, 10);
+            food.y = random(0, 300 - 10, 10);
+          }
+          food.live = true;
+        }
+      }
+
+      //Create and draw food randomly
+      function drawFood(){
+        createFood();
+        ctx.fillStyle = "red";
+        ctx.fillRect(food.x, food.y, 10, 10)
+      }
+
+      function drawScore(){
+        ctx.beginPath();
+        ctx.fillStyle = "black"
+        ctx.font = "15px Arial"
+        ctx.fillText("Score: " + score, canvas.width - 70, 20)
+      }
+
+
+      //Main snake constructor
+      function CreateSnake(xCoord, yCoord, length, dx, dy){
+        this.snake = [];
+        for(j = 0; j < length; j++){
+          this.snake.push({x: xCoord - (j * 10), y: yCoord})
+        }
+        this.dx = dx;
+        this.dy = dy;
+      }
+
+      //Draw every parts of the snake
+      CreateSnake.prototype.drawSnake = function(){
+        var headColor = true;
+        this.snake.forEach(function(parts){
+          ctx.fillStyle = "slateblue";
+          if(headColor){
+            ctx.fillStyle = "darkorchid";
+          }
+          ctx.beginPath()
+          ctx.arc(parts.x + 5, parts.y + 5, 5, 0, Math.PI * 2)
+          ctx.fill();
+          headColor = false;
+        });
+      }
+
+      //Insert a new part in the head and remove the last
+      CreateSnake.prototype.move = function(){
+        const head = {x: this.snake[0].x + this.dx, y: this.snake[0].y + this.dy};
+        this.snake.unshift(head);
+        this.snake.pop();
+      }
+
+      //Return true if snake bite its body
+      CreateSnake.prototype.ifLose = function(){
+        for(i = 1; i < snake.length; i++){
+          if(this.snake[0].x == this.snake[i].x && snake[0].y == snake[i].y){
+            return true;
+          }
+        }
+      }
+
+      //Snake appear in other side of the canvas
+      CreateSnake.prototype.noBorder = function(){
+        if(this.snake[0].x >= canvas.width){
+          this.snake[0].x = 0
+        }
+        else if(this.snake[0].x < 0 ){
+          this.snake[0].x = canvas.width;
+        }
+        else if(this.snake[0].y >= canvas.height){
+          this.snake[0].y = 0
+        }
+        else if(this.snake[0].y < 0){
+          this.snake[0].y = canvas.height;
+        }
+      }
+
+
+
+      //PlayerSnake inherits from CreateSnake
+      function PlayerSnake(xCoord, yCoord, length, dx, dy){
+        CreateSnake.call(this, xCoord, yCoord, length, dx, dy);
+        this.score = 0;
+      }
+      PlayerSnake.prototype = Object.create(CreateSnake.prototype);
+
+      PlayerSnake.prototype.ifLose = function(){
+        //If you bite your body
+        for(i = 1; i < this.snake.length; i++){
+          if(this.snake[0].x == this.snake[i].x && this.snake[0].y == this.snake[i].y){
+            return true;
+          }
+        }
+        if(this.snake[0].x >= wall_1.x && this.snake[0].x < wall_1.x + wall_1.width && this.snake[0].y >= wall_1.y && this.snake[0].y < wall_1.y + wall_1.height){
+          return true;
+        }
+        if(this.snake[0].x >= wall_2.x && this.snake[0].x < wall_2.x + wall_2.width && this.snake[0].y >= wall_2.y && this.snake[0].y < wall_2.y + wall_2.height){
+          return true;
+        }
+        if(this.snake[0].x > wall_3.x && this.snake[0].x < wall_3.x + wall_3.width && this.snake[0].y >= wall_3.y && this.snake[0].y < wall_3.y + wall_3.height){
+          return true;
+        }
+      }
+
+      PlayerSnake.prototype.check = function(){
+        //If food is eaten add new part in the head
+        if(this.snake[0].x == food.x && this.snake[0].y == food.y){
+          food.live = false;
+          this.snake.unshift({x: this.snake[0].x + this.dx, y: this.snake[0].y + this.dy});
+          score ++;
+          wall_1.y = random(0, 300 - 20, 10)
+          wall_2.y = random(0, 300 - 20, 10)
+          wall_3.y = random(0, 300 - 20, 10)
+          if(score >= 20){
+            alert("You win. Visit the other modified version of snake game by Alquen")
+            //window.location.reload(false);
+            clearInterval(frame);
+          }
+        }
+
+        if(this.ifLose()){
+          alert("You lose repeat the game or visit the other modified version.")
+          //window.location.reload(false);
+          clearInterval(frame);
+        }
+      }
+
+      //Control system
+      PlayerSnake.prototype.direction = function(direct){
+        switch(direct){
+          case "right":
+            this.dx = 10;
+            this.dy = 0;
+            break;
+          case "left":
+            this.dx = -10;
+            this.dy = 0;
+            break;
+          case "down":
+            this.dy = 10;
+            this.dx = 0;
+            break;
+          case "up":
+            this.dy = -10;
+            this.dx = 0;
+            break;
+        }
+      }
+
+      PlayerSnake.prototype.main = function(){
+        this.check();
+        this.drawSnake();
+        this.move();
+        this.noBorder();
+      }
+
+
+      function WallCreate(x, y , width, height, color){
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.color = color;
+      }
+
+      WallCreate.prototype.checkWall = function(){
+        for(h = 1; h < player.snake.length; h++){
+          if(player.snake[h].x >= this.x && player.snake[h].x < this.x + this.width && player.snake[h].y >= this.y && player.snake[h].y < this.y + this.height){
+            return false;
+          }
+        }
+        if((food.x >= this.x && food.x < this.x + this.width && food.y >= this.y && food.y < this.y + this.height)){
+          return false;
+        }
+        return true;
+      }
+
+      WallCreate.prototype.check = function(){
+        while(!this.checkWall()){
+          this.y = random(50, 300 - 20, 10)
+        }
+        return true;
+      }
+
+      WallCreate.prototype.drawWall = function(){
+        if(this.check()){
+          ctx.fillStyle = this.color
+          ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
+      }
+
+
+      WallCreate.prototype.main = function(){
+        this.drawWall();
+      }
+
+
+      var player = new PlayerSnake(150, 150, 20, 10, 0);
+      var wall_1 = new WallCreate(random(0, 300 - 20, 10), random(0, 300 - 20, 10), random(100, 150, 10), 20, "saddlebrown")
+      var wall_2 = new WallCreate(random(0, 300 - 20, 10), random(0, 300 - 20, 10), random(100, 150, 10), 20, "saddlebrown")
+      var wall_3 = new WallCreate(random(0, 300 - 20, 10), random(0, 300 - 20, 10), 20, random(100, 150, 10), "saddlebrown")
+
+      var frame = setInterval(function(){
+        ctx.clearRect(0, 0, 300,300)
+        player.main();
+        wall_1.main();
+        wall_2.main();
+        wall_3.main();
+        drawFood();
+        drawScore();
+      }, 100)
+
+
+      var startX;
+      var startY;
+      var endX;
+      var endY;
+
+      function handleTouch(start,end, cbL, cbR){
+        var xDist = endX - startX;
+        var yDist = endY - startY;
+
+        if(Math.abs(xDist) > Math.abs(yDist)){
+          if(xDist > 0 && player.dx != -10){
+            player.direction("right")
+          }
+          else if(xDist < 0 && player.dx != 10){
+            player.direction("left")
+          }
+        }
+        else{
+          if(yDist > 0 && player.dy != -10){
+            player.direction("down")
+          }
+          else if(yDist < 10 && player.dy != 10){
+            player.direction("up")
+          }
+        }
+      }
+
+      //Checking the pressed key
+      function keyDownHandler(e){
+        if(e.keyCode == 39 && player.dx != -10){
+          player.direction("right")
+        }
+        else if(e.keyCode == 37 && player.dx != 10){
+          player.direction("left")
+        }
+        else if(e.keyCode == 40 && player.dy != -10){
+          player.direction("down")
+        }
+        else if(e.keyCode == 38 && player.dy != 10){
+          player.direction("up")
+        }
+      }
+
+      window.onload = function(){
+        var button = document.getElementById("button");
+        button.addEventListener("click", function(){
+          alert(info)
+        })
+
+        //Detect the coordinates of the start of touch
+        window.addEventListener('touchstart', function(event){
+          startX = event.touches[0].clientX;
+          startY = event.touches[0].clientY;
+        })
+        //Detect the coordinates of the end of touch
+        window.addEventListener('touchend', function(event){
+        endX = event.changedTouches[0].clientX;
+        endY = event.changedTouches[0].clientY;
+
+        handleTouch()
+        })
+      }
+
+        document.addEventListener("keydown", keyDownHandler, false);
+
+    </script>
+  </body>
+</html>
